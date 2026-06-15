@@ -1,0 +1,6 @@
+models:
+  - name: qwen2.5-7b-instruct
+    path: /models/qwen2.5-7b-instruct
+    tensor_parallel_size: 1
+    max_model_len: 8192
+    gpu_memory_utilization: 0.90

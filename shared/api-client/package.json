@@ -1,0 +1,6 @@
+{
+  "name": "@digital-twin/api-client",
+  "version": "0.1.0",
+  "main": "client.ts",
+  "types": "client.ts"
+}

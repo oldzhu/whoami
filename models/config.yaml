@@ -1,0 +1,60 @@
+# Digital Twin Model Catalog
+# All models run locally via Ollama / llama.cpp / vLLM
+
+models:
+  - name: qwen2.5:7b-instruct-q4_K_M
+    provider: ollama
+    type: chat
+    description: "Qwen2.5 7B - Best Chinese language model"
+    size_gb: 4.7
+    languages: ["zh", "en"]
+    tags: ["chat", "chinese", "general"]
+    recommended_hardware: ["cuda", "rocm", "cann", "cpu"]
+    min_ram_gb: 8
+
+  - name: deepseek-coder:6.7b-instruct-q4_K_M
+    provider: ollama
+    type: chat
+    description: "DeepSeek Coder 6.7B - Code generation specialist"
+    size_gb: 4.0
+    languages: ["zh", "en", "code"]
+    tags: ["chat", "code", "technical"]
+    recommended_hardware: ["cuda", "rocm", "cann"]
+    min_ram_gb: 8
+
+  - name: llama3.1:8b-instruct-q4_K_M
+    provider: ollama
+    type: chat
+    description: "Llama 3.1 8B - General purpose English model"
+    size_gb: 4.9
+    languages: ["en"]
+    tags: ["chat", "english", "general"]
+    recommended_hardware: ["cuda", "rocm", "cann"]
+    min_ram_gb: 8
+
+  - name: all-minilm:l6-v2
+    provider: ollama
+    type: embedding
+    description: "all-MiniLM-L6-v2 - Lightweight embedding model (384 dims)"
+    size_gb: 0.1
+    languages: ["en", "zh"]
+    tags: ["embedding", "lightweight"]
+    recommended_hardware: ["cuda", "rocm", "cann", "cpu"]
+    min_ram_gb: 2
+
+  - name: bge-m3
+    provider: ollama
+    type: embedding
+    description: "BGE-M3 - Multi-lingual embedding model (1024 dims)"
+    size_gb: 1.2
+    languages: ["zh", "en", "multi"]
+    tags: ["embedding", "multilingual"]
+    recommended_hardware: ["cuda", "rocm", "cann"]
+    min_ram_gb: 4
+
+routing:
+  default_chat: qwen2.5:7b-instruct-q4_K_M
+  default_embedding: all-minilm:l6-v2
+  chinese_chat: qwen2.5:7b-instruct-q4_K_M
+  code_chat: deepseek-coder:6.7b-instruct-q4_K_M
+  english_chat: llama3.1:8b-instruct-q4_K_M

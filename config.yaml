@@ -3,9 +3,9 @@ llm:
   models_dir: ./models
 
 hardware:
-  cuda: enabled
-  rocm: enabled
-  cann: enabled
+  cuda: true
+  rocm: true
+  cann: true
 
 server:
   host: 0.0.0.0
