@@ -1,0 +1,16 @@
+llm:
+  backend: auto
+  models_dir: ./models
+
+hardware:
+  cuda: enabled
+  rocm: enabled
+  cann: enabled
+
+server:
+  host: 0.0.0.0
+  port: 8000
+
+data:
+  dir: ./data
+  chroma_dir: ./data/chroma

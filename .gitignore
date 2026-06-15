@@ -1,0 +1,12 @@
+models/*.gguf
+models/*.bin
+data/personal/
+.env
+venv/
+node_modules/
+.next/
+*.pyc
+__pycache__/
+dist/
+build/
+*.log

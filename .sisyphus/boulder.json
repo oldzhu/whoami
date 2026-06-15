@@ -1,0 +1,22 @@
+{
+  "active_plan": "/home/oldzhu/whoami/.sisyphus/plans/digital-twin.md",
+  "started_at": "2026-06-15T07:55:16.600Z",
+  "session_ids": [
+    "ses_136ffb059ffeYBXkmziddT0dGW"
+  ],
+  "session_origins": {
+    "ses_136ffb059ffeYBXkmziddT0dGW": "direct"
+  },
+  "plan_name": "digital-twin",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "项目目录结构 + 开发环境配置",
+      "session_id": "ses_135b14edeffe2CtNZJHFrSwABY",
+      "agent": "general",
+      "updated_at": "2026-06-15T08:33:35.768Z"
+    }
+  }
+}
