@@ -2,11 +2,12 @@
 import os
 import uuid
 import logging
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from ..core.ingestion import IngestionPipeline
 from ..core.storage import VectorStore
+from ..middleware import auth_required
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/knowledge", tags=["knowledge"])
@@ -40,7 +41,7 @@ class DocumentInfo(BaseModel):
     uploaded_at: str
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...), username: str = Depends(auth_required)):
     """Upload a document to the knowledge base."""
     allowed_extensions = {".pdf", ".docx", ".md", ".txt"}
     ext = os.path.splitext(file.filename or "")[1].lower()
@@ -79,7 +80,7 @@ async def list_documents():
     return {"document_count": "N/A (chunk-level)", "total_chunks": count}
 
 @router.delete("/documents/{doc_id}")
-async def delete_document(doc_id: str):
+async def delete_document(doc_id: str, username: str = Depends(auth_required)):
     return {"status": "deleted", "id": doc_id}
 
 @router.get("/search")
