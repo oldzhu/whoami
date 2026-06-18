@@ -1,7 +1,9 @@
 models/*.gguf
 models/*.bin
-data/personal/
+data/
 .env
+.env.*
+!.env.example
 venv/
 node_modules/
 .next/
