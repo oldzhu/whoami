@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 class OllamaAdapter(LLMProvider):
     """Adapter for Ollama's native REST API, returning OpenAI-compatible responses."""
 
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "llama3"):
+    def __init__(self, base_url: str = "http://localhost:11434", model: str = "qwen2.5:1.5b"):
         self.base_url = base_url.rstrip("/")
         self.model = model
 
     async def _request(self, method: str, path: str, json: Dict = None) -> Any:
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(trust_env=False) as session:
                 async with session.request(method, f"{self.base_url}{path}", json=json) as resp:
                     if resp.status >= 400:
                         logger.warning(f"Ollama {method} {path} failed: {resp.status}")

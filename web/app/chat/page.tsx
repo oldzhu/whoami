@@ -3,8 +3,10 @@ import { useState, useRef, useEffect } from 'react';
 import { MessageBubble } from '@/components/Chat/MessageBubble';
 import { DigitalHuman } from '@/components/Avatar/DigitalHuman';
 import { useChatWebSocket } from '@/hooks/useChatWebSocket';
+import { useI18n } from '@/lib/i18n';
 
 export default function ChatPage() {
+  const { t } = useI18n();
   const { messages, sendMessage, isStreaming, connect } = useChatWebSocket();
   const [input, setInput] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -74,7 +76,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)]">
-      <h2 className="text-2xl font-bold mb-4">Chat with Digital Twin 数字分身对话</h2>
+      <h2 className="text-2xl font-bold mb-4">{t('chat.title')}</h2>
 
       <div className="flex justify-center mb-4">
         <DigitalHuman size={80} />
@@ -83,11 +85,11 @@ export default function ChatPage() {
       <div className="flex-1 overflow-y-auto mb-4 space-y-1">
         {messages.length === 0 && (
           <div className="text-center text-gray-400 py-20">
-            Start a conversation! 开始对话吧！
+            {t('chat.empty')}
           </div>
         )}
         {messages.map((m, i) => <MessageBubble key={i} role={m.role} content={m.content} />)}
-        {isStreaming && <div className="text-gray-400 text-sm">Thinking...</div>}
+        {isStreaming && <div className="text-gray-400 text-sm">{t('chat.thinking')}</div>}
         <div ref={messagesEndRef} />
       </div>
 
@@ -97,21 +99,21 @@ export default function ChatPage() {
           className={`p-3 rounded-lg ${isRecording ? 'bg-red-500' : 'bg-gray-200'} hover:opacity-80`}
           title={isRecording ? 'Stop recording' : 'Voice input'}
         >
-          🎤
+          &#127908;
         </button>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message... / 输入消息..."
+          placeholder={t('chat.placeholder')}
           className="flex-1 border rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
           rows={2}
         />
         <button onClick={handleSend} disabled={!input.trim()} className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50">
-          Send
+          {t('chat.send')}
         </button>
         <button onClick={speakLastMessage} className="p-3 rounded-lg bg-gray-200 hover:opacity-80" title="Read aloud">
-          🔊
+          &#128266;
         </button>
       </div>
     </div>

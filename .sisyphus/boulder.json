@@ -83,6 +83,14 @@
       "session_id": "ses_13537f5f0ffeOMseimxroD1uiO",
       "agent": "general",
       "updated_at": "2026-06-15T10:16:31.174Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "Plan Compliance Audit — `oracle`",
+      "session_id": "ses_1352bc899ffeUNJphgyFcTxk4a",
+      "agent": "oracle",
+      "updated_at": "2026-06-15T10:31:55.972Z"
     }
   }
 }

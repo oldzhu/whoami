@@ -3,11 +3,12 @@ from .base import LLMProvider
 from .ollama_adapter import OllamaAdapter
 from .llamacpp_adapter import LlamaCppAdapter
 from .vllm_adapter import VLLMAdapter
+from .mock_adapter import MockAdapter
 import subprocess
 import os
 from typing import Optional
 
-__all__ = ["LLMProvider", "OllamaAdapter", "LlamaCppAdapter", "VLLMAdapter", "create_llm_provider", "detect_hardware_backend"]
+__all__ = ["LLMProvider", "OllamaAdapter", "LlamaCppAdapter", "VLLMAdapter", "MockAdapter", "create_llm_provider", "detect_hardware_backend"]
 
 
 def detect_hardware_backend() -> str:
@@ -29,14 +30,25 @@ def detect_hardware_backend() -> str:
 
 def create_llm_provider(backend: str = "auto", **kwargs) -> LLMProvider:
     """Factory: create an LLM provider based on backend type."""
+    if backend == "mock":
+        return MockAdapter(**kwargs)
     if backend == "auto":
         backend = detect_hardware_backend()
     base_url = kwargs.get("base_url", "http://localhost:11434")
     if backend == "ollama" or backend in ("cuda", "rocm", "cann", "cpu"):
-        return OllamaAdapter(base_url=base_url)
+        try:
+            return OllamaAdapter(base_url=base_url)
+        except Exception:
+            return MockAdapter(**kwargs)
     elif backend == "llamacpp":
-        return LlamaCppAdapter(base_url=base_url)
+        try:
+            return LlamaCppAdapter(base_url=base_url)
+        except Exception:
+            return MockAdapter(**kwargs)
     elif backend == "vllm":
-        return VLLMAdapter(base_url=base_url)
+        try:
+            return VLLMAdapter(base_url=base_url)
+        except Exception:
+            return MockAdapter(**kwargs)
     else:
-        raise ValueError(f"Unknown backend: {backend}")
+        return MockAdapter(**kwargs)

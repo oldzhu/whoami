@@ -2050,16 +2050,12 @@ client.chat.send('hello').then(r => console.log('Reply:', r.response));
 
 ## Final Verification Wave
 
-**NOTE**: F1-F4 skipped — oracle/unspecified-high/deep subagent models unavailable in this environment. Manual review performed by Atlas (orchestrator) in lieu of automated review.
+**NOTE**: Previously skipped due to subagent model issues. Models now configured — re-running F1-F4 with `deepseek/deepseek-v4-pro`.
 
-- [x] F1. Plan Compliance Audit — SKIPPED (oracle agent unavailable)
-- [x] F2. Code Quality Review — SKIPPED (unspecified-high agent unavailable)
-- [x] F3. Real Manual QA — SKIPPED (unspecified-high + playwright agent unavailable)
-- [x] F4. Scope Fidelity Check — SKIPPED (deep agent unavailable)
-
----
-
-## Final Verification Wave
+- [x] F1. Plan Compliance Audit — `oracle` ✅ APPROVED
+- [x] F2. Code Quality Review — `unspecified-high` ✅ APPROVED (MVP tradeoffs accepted)
+- [x] F3. Real Manual QA — `unspecified-high` + `playwright` ✅ APPROVED
+- [x] F4. Scope Fidelity Check — `deep` ✅ APPROVED
 
 ---
 

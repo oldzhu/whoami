@@ -4,11 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import load_config
-from .api import knowledge as knowledge_api
-from .api import chat as chat_api
-from .api import profile as profile_api
-from .api import voice as voice_api
-from .api import evolution as evolution_api
+from .middleware import LocalOnlyMiddleware
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,15 +33,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(knowledge_api.router)
+app.add_middleware(LocalOnlyMiddleware)
 
-app.include_router(chat_api.router)
+# Lazy-load API routers — gracefully skip if dependencies are missing
+_router_modules = [
+    ("auth", "auth_api"),
+    ("profile", "profile_api"),
+    ("chat", "chat_api"),
+    ("knowledge", "knowledge_api"),
+    ("voice", "voice_api"),
+    ("evolution", "evolution_api"),
+]
 
-app.include_router(profile_api.router)
-
-app.include_router(voice_api.router)
-
-app.include_router(evolution_api.router)
+for module_name, _ in _router_modules:
+    try:
+        mod = __import__(f"backend.app.api.{module_name}", fromlist=["router"])
+        if hasattr(mod, "router"):
+            app.include_router(mod.router)
+            logger.info(f"✅ Loaded API: {module_name}")
+        else:
+            logger.warning(f"⚠️  No router in {module_name}")
+    except ImportError as e:
+        logger.warning(f"⚠️  Skipping {module_name}: {e}")
 
 @app.get("/health")
 async def health_check():

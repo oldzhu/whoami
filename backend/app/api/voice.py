@@ -1,14 +1,19 @@
 """Voice conversation API."""
 import json
 import logging
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+import os
+import shutil
+import uuid
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, UploadFile, File, Depends
 from ..core.voice import SpeechToText, TextToSpeech
 from ..core.voice.orchestrator import VoiceOrchestrator
+from ..middleware import auth_required
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/voice", tags=["voice"])
 
 _orchestrator = None
+VOICE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "voice"))
 
 
 def _get_orch():
@@ -73,4 +78,25 @@ async def voice_status():
         "stt_ready": orch.stt.is_ready,
         "tts_ready": orch.tts.is_ready,
         "tts_speakers": orch.tts.speakers,
+    }
+
+
+@router.post("/speaker")
+async def upload_speaker_sample(
+    file: UploadFile = File(...),
+    username: str = Depends(auth_required),
+):
+    os.makedirs(VOICE_DIR, exist_ok=True)
+    speaker_id = str(uuid.uuid4())[:8]
+    ext = os.path.splitext(file.filename or "sample.wav")[1] or ".wav"
+    file_path = os.path.join(VOICE_DIR, f"{speaker_id}{ext}")
+    with open(file_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    orch = _get_orch()
+    tts = orch.tts
+    success = tts.register_speaker(speaker_id, file_path)
+    return {
+        "speaker_id": speaker_id,
+        "status": "registered" if success else "registration_failed",
+        "username": username,
     }

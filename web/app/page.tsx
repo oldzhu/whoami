@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 interface Profile {
   name: string; title: string; summary: string;
@@ -21,13 +22,14 @@ function SkillBar({ name, level }: { name: string; level: number }) {
 }
 
 export default function Home() {
+  const { t } = useI18n();
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     fetch("http://localhost:8000/api/profile")
       .then(r => r.json()).then(setProfile)
       .catch(() => setProfile({
-        name: "数字分身", title: "AI Digital Twin",
+        name: "Digital Twin", title: "AI Digital Twin",
         summary: "Loading profile...", skills: [], projects: [], experience: [], education: []
       }));
   }, []);
@@ -38,26 +40,26 @@ export default function Home() {
     <div className="max-w-3xl mx-auto">
       <div className="text-center py-12">
         <div className="w-32 h-32 bg-blue-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <span className="text-4xl">🤖</span>
+          <span className="text-4xl">&#129302;</span>
         </div>
         <h1 className="text-4xl font-bold mb-2">{profile.name}</h1>
         <p className="text-xl text-gray-600 mb-4">{profile.title}</p>
         <p className="text-gray-500 max-w-xl mx-auto">{profile.summary}</p>
         <a href="/chat" className="inline-block mt-6 bg-blue-600 text-white px-8 py-3 rounded-lg text-lg hover:bg-blue-700 transition">
-          与数字分身对话 → / Chat with Digital Twin →
+          {t("home.cta")}
         </a>
       </div>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">技能 / Skills</h2>
+        <h2 className="text-2xl font-bold mb-4">{t("home.skills")}</h2>
         <div className="bg-white rounded-lg shadow p-6">
-          {profile.skills.map((s, i) => <SkillBar key={i} name={s.name} level={s.level} />)}
+          {(profile.skills || []).map((s, i) => <SkillBar key={i} name={s.name} level={s.level} />)}
         </div>
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">项目 / Projects</h2>
-        {profile.projects.map((p, i) => (
+        <h2 className="text-2xl font-bold mb-4">{t("home.projects")}</h2>
+        {(profile.projects || []).map((p, i) => (
           <div key={i} className="bg-white rounded-lg shadow p-6 mb-4">
             <h3 className="text-lg font-semibold">{p.name}</h3>
             <p className="text-gray-600 mt-1">{p.description}</p>
@@ -69,8 +71,8 @@ export default function Home() {
       </section>
 
       <section className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">经历 / Experience</h2>
-        {profile.experience.map((e, i) => (
+        <h2 className="text-2xl font-bold mb-4">{t("home.experience")}</h2>
+        {(profile.experience || []).map((e, i) => (
           <div key={i} className="bg-white rounded-lg shadow p-6 mb-3">
             <div className="flex justify-between">
               <h3 className="font-semibold">{e.role} @ {e.company}</h3>
