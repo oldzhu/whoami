@@ -20,6 +20,10 @@ class RateLimiter:
         self._clients[key].append(now)
         return True
 
+    def reset(self):
+        """Clear all rate limit state (for testing)."""
+        self._clients.clear()
+
 
 limiter = RateLimiter(max_requests=30, window_seconds=60)
 
