@@ -6,6 +6,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from ..core.ingestion import IngestionPipeline
+from ..core.ingestion.github import GitHubRepoAnalyzer, parse_github_url
 from ..core.storage import VectorStore
 from ..middleware import auth_required
 
@@ -101,4 +102,44 @@ async def get_stats(username: str = Depends(auth_required)):
     return {
         "total_chunks": store.count("knowledge_base"),
         "collections": store.list_collections(),
+    }
+
+
+class ImportGitHubRequest(BaseModel):
+    url: str
+
+
+@router.post("/import-github")
+async def import_github_project(body: ImportGitHubRequest, username: str = Depends(auth_required)):
+    """Import a GitHub project: parse repo, extract tech stack, ingest into knowledge base."""
+    parsed = parse_github_url(body.url)
+    if not parsed:
+        raise HTTPException(status_code=400, detail="Invalid GitHub URL")
+
+    owner, repo = parsed
+    logger.info(f"Importing GitHub project: {owner}/{repo}")
+
+    repo_data = await GitHubRepoAnalyzer.analyze(owner, repo)
+
+    if not repo_data.get("readme"):
+        raise HTTPException(status_code=404, detail="Could not fetch repo data (network may be unavailable)")
+
+    knowledge_text = GitHubRepoAnalyzer.extract_knowledge(repo_data, body.url)
+
+    pipeline = _get_pipeline()
+    chunks = pipeline.ingest_text(knowledge_text, source=f"github:{owner}/{repo}")
+
+    store = _get_store()
+    store.create_collection("knowledge_base")
+    texts = [c["text"] for c in chunks]
+    embeddings = [c["embedding"] for c in chunks]
+    metadatas = [{"source": f"github:{owner}/{repo}", "type": "project"} for _ in chunks]
+    store.add_documents("knowledge_base", texts, embeddings, metadatas)
+
+    return {
+        "status": "imported",
+        "owner": owner,
+        "repo": repo,
+        "chunks": len(chunks),
+        "tech_stack": repo_data.get("tech_stack", []),
     }

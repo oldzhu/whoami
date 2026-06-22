@@ -98,3 +98,23 @@ class IngestionPipeline:
                     "source_file": filename,
                 })
         return results
+
+    def ingest_text(self, text: str, source: str = "direct") -> List[Dict]:
+        """Ingest raw text directly (no file parsing needed)."""
+        chunks = self.chunker.chunk_text(text)
+        results = []
+        chunk_texts = [c["text"] for c in chunks]
+        try:
+            embeddings = self.embedder.embed(chunk_texts)
+        except Exception:
+            embeddings = [[] for _ in chunks]
+        for i, chunk in enumerate(chunks):
+            embedding = embeddings[i] if i < len(embeddings) else []
+            results.append({
+                "chunk_id": str(uuid.uuid4()),
+                "text": chunk["text"],
+                "embedding": embedding,
+                "metadata": {"source": source, "chunk_index": i},
+                "source_file": source,
+            })
+        return results
