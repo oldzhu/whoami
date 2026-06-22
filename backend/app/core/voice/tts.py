@@ -1,54 +1,54 @@
-"""Text-to-speech using Coqui XTTS v2 with voice cloning."""
+"""Text-to-speech using Piper TTS with multi-language voice support."""
 import logging
 import os
 import io
+import wave
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+MODELS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "models", "piper")
+MODELS_DIR = os.path.abspath(MODELS_DIR)
+
+VOICE_MAP = {
+    "zh": os.path.join(MODELS_DIR, "zh_CN-huayan-medium.onnx"),
+    "en": os.path.join(MODELS_DIR, "en_US-lessac-medium.onnx"),
+}
+
 
 class TextToSpeech:
-    """Local TTS with Coqui XTTS v2."""
+    """Local TTS using Piper (lightweight, works on Python 3.12)."""
 
-    def __init__(self, models_dir: str = "models/xtts"):
-        self.models_dir = models_dir
-        self._model = None
-        self._speaker_embeddings = {}
-        self.default_speaker = None
+    def __init__(self):
+        self._voices: dict[str, object] = {}
+        self._speakers: dict[str, str] = {}  # speaker_id -> wav_path (for future cloning)
+        self.default_voice = "zh"
 
-    def _load_model(self):
-        """Lazy-load the XTTS model."""
-        if self._model is not None:
-            return
+    def _load_voice(self, lang: str):
+        if lang in self._voices:
+            return self._voices[lang]
+        model_path = VOICE_MAP.get(lang, VOICE_MAP.get("zh", ""))
+        config_path = model_path + ".json"
+        if not os.path.exists(model_path):
+            logger.warning(f"Voice model not found: {model_path}")
+            return None
         try:
-            from TTS.api import TTS as CoquiTTS
-            os.makedirs(self.models_dir, exist_ok=True)
-            self._model = CoquiTTS(
-                model_name="tts_models/multilingual/multi-dataset/xtts_v2",
-                progress_bar=False,
-            )
-            logger.info("XTTS v2 model loaded")
-        except ImportError:
-            logger.warning("Coqui TTS not installed. Install: pip install TTS")
-            self._model = None
+            from piper import PiperVoice
+            voice = PiperVoice.load(model_path, config_path=config_path)
+            self._voices[lang] = voice
+            logger.info(f"Piper voice loaded: {lang}")
+            return voice
         except Exception as e:
-            logger.error(f"Failed to load XTTS model: {e}")
-            self._model = None
+            logger.error(f"Failed to load Piper voice: {e}")
+            return None
 
     def register_speaker(self, speaker_id: str, sample_wav_path: str) -> bool:
-        """Register a speaker from a voice sample for cloning."""
-        self._load_model()
-        if self._model is None:
-            return False
-        try:
-            self._speaker_embeddings[speaker_id] = sample_wav_path
-            if self.default_speaker is None:
-                self.default_speaker = speaker_id
-            logger.info(f"Speaker '{speaker_id}' registered")
-            return True
-        except Exception as e:
-            logger.error(f"Failed to register speaker: {e}")
-            return False
+        """Register a voice sample (for future voice cloning)."""
+        self._speakers[speaker_id] = sample_wav_path
+        if not self._speakers:
+            self.default_voice = speaker_id
+        logger.info(f"Speaker '{speaker_id}' registered")
+        return True
 
     def synthesize(
         self,
@@ -57,50 +57,42 @@ class TextToSpeech:
         language: str = "zh",
         output_path: Optional[str] = None,
     ) -> bytes:
-        """Synthesize speech from text. Returns WAV audio bytes."""
-        self._load_model()
-        if self._model is None:
+        """Synthesize speech. Returns WAV audio bytes."""
+        lang = language[:2] if language else "zh"
+        if lang not in VOICE_MAP:
+            lang = "zh"
+        model_path = VOICE_MAP.get(lang, "")
+        if not os.path.exists(model_path):
             return b""
-
-        speaker = speaker_id or self.default_speaker
-        speaker_wav = self._speaker_embeddings.get(speaker) if speaker else None
-
         try:
-            wav = self._model.tts(
-                text=text,
-                speaker_wav=speaker_wav,
-                language=language,
+            import subprocess, sys
+            result = subprocess.run(
+                [sys.executable, "-m", "piper", "--model", model_path, "--output-raw", "-q"],
+                input=text.encode("utf-8"), capture_output=True, timeout=30,
             )
-
-            import numpy as np
-            import wave
-
-            wav_np = np.array(wav, dtype=np.float32)
-            wav_int16 = (wav_np * 32767).astype(np.int16)
-
+            if result.returncode != 0 or not result.stdout:
+                return b""
+            raw = result.stdout
             buf = io.BytesIO()
-            with wave.open(buf, 'wb') as wf:
+            with wave.open(buf, "wb") as wf:
                 wf.setnchannels(1)
                 wf.setsampwidth(2)
-                wf.setframerate(24000)
-                wf.writeframes(wav_int16.tobytes())
-
-            audio_bytes = buf.getvalue()
-
+                wf.setframerate(22050)
+                wf.writeframes(raw)
+            audio = buf.getvalue()
             if output_path:
-                with open(output_path, 'wb') as f:
-                    f.write(audio_bytes)
-
-            return audio_bytes
+                os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+                with open(output_path, "wb") as f:
+                    f.write(audio)
+            return audio
         except Exception as e:
-            logger.error(f"TTS synthesis failed: {e}")
+            logger.error(f"TTS failed: {e}")
             return b""
 
     @property
     def is_ready(self) -> bool:
-        self._load_model()
-        return self._model is not None
+        return any(os.path.exists(p) for p in VOICE_MAP.values())
 
     @property
     def speakers(self) -> list:
-        return list(self._speaker_embeddings.keys())
+        return list(self._speakers.keys())

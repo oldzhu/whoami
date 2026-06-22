@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class SpeechToText:
     """Local STT using faster-whisper."""
 
-    def __init__(self, model_size: str = "base", device: str = "auto"):
+    def __init__(self, model_size: str = "base", device: str = "cpu"):
         """
         Initialize STT with faster-whisper.
 
@@ -21,7 +21,8 @@ class SpeechToText:
         self.model_size = model_size
         self.device = device
         self._model = None
-        self._models_dir = os.path.join("models", "whisper")
+        self._models_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "models", "whisper")
+        self._models_dir = os.path.abspath(self._models_dir)
 
     def _load_model(self):
         """Lazy-load the whisper model."""
@@ -31,7 +32,7 @@ class SpeechToText:
             from faster_whisper import WhisperModel
 
             os.makedirs(self._models_dir, exist_ok=True)
-            compute_type = "int8" if self.device == "cpu" else "float16"
+            compute_type = "int8"
             self._model = WhisperModel(
                 self.model_size,
                 device=self.device,
