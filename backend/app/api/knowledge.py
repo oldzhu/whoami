@@ -5,8 +5,10 @@ import logging
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
 from pydantic import BaseModel
 from typing import List, Optional
+from urllib.parse import urlparse
 from ..core.ingestion import IngestionPipeline
 from ..core.ingestion.github import GitHubRepoAnalyzer, parse_github_url
+from ..core.ingestion.web_fetcher import WebContentFetcher
 from ..core.storage import VectorStore
 from ..middleware import auth_required
 
@@ -142,4 +144,43 @@ async def import_github_project(body: ImportGitHubRequest, username: str = Depen
         "repo": repo,
         "chunks": len(chunks),
         "tech_stack": repo_data.get("tech_stack", []),
+    }
+
+
+@router.post("/import-url")
+async def import_url(body: ImportGitHubRequest, username: str = Depends(auth_required)):
+    """Import content from any public URL into the knowledge base."""
+    url = body.url.strip()
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        raise HTTPException(status_code=400, detail="Invalid URL")
+
+    logger.info(f"Importing URL: {url}")
+    content = await WebContentFetcher.extract(url)
+
+    if not content.get("success"):
+        raise HTTPException(status_code=404, detail="Could not fetch URL content")
+
+    title = content.get("title", parsed.netloc)
+    text = content.get("text", "")
+    if len(text) < 50:
+        raise HTTPException(status_code=400, detail="URL content too short to be useful")
+
+    source = f"url:{parsed.netloc}:{title[:50]}"
+    pipeline = _get_pipeline()
+    chunks = pipeline.ingest_text(text, source=source)
+
+    store = _get_store()
+    store.create_collection("knowledge_base")
+    texts = [c["text"] for c in chunks]
+    embeddings = [c["embedding"] for c in chunks]
+    metadatas = [{"source": source, "url": url, "title": title} for _ in chunks]
+    store.add_documents("knowledge_base", texts, embeddings, metadatas)
+
+    return {
+        "status": "imported",
+        "url": url,
+        "title": title,
+        "chunks": len(chunks),
+        "text_length": len(text),
     }
