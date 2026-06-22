@@ -5,7 +5,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from .core.auth import get_auth
 
 LOCAL_IPS = {"127.0.0.1", "::1", "localhost"}
-PROTECTED_PREFIXES = ("/api/auth", "/api/settings", "/api/admin")
+PROTECTED_PREFIXES = ("/api/auth", "/api/settings", "/api/admin", "/api/knowledge", "/api/profile", "/api/evolution", "/api/voice/speaker")
 
 security = HTTPBearer(auto_error=False)
 
