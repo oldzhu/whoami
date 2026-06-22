@@ -1,10 +1,11 @@
 """Digital Twin Backend - FastAPI Application."""
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from .config import load_config
 from .middleware import LocalOnlyMiddleware
+from .core.rate_limit import rate_limit_middleware
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,6 +35,13 @@ app.add_middleware(
 )
 
 app.add_middleware(LocalOnlyMiddleware)
+
+
+@app.middleware("http")
+async def rate_limit_handler(request: Request, call_next):
+    await rate_limit_middleware(request)
+    return await call_next(request)
+
 
 # Lazy-load API routers — gracefully skip if dependencies are missing
 _router_modules = [

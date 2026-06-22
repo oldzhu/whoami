@@ -50,7 +50,8 @@ async def upload_document(file: UploadFile = File(...), username: str = Depends(
 
     upload_dir = "data/uploads"
     os.makedirs(upload_dir, exist_ok=True)
-    filepath = os.path.join(upload_dir, file.filename or "upload")
+    safe_name = f"{uuid.uuid4().hex[:8]}_{os.path.basename(file.filename or 'upload')}"
+    filepath = os.path.join(upload_dir, safe_name)
     with open(filepath, "wb") as f:
         content = await file.read()
         f.write(content)

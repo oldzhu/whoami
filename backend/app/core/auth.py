@@ -1,11 +1,13 @@
-"""Simple local authentication with SHA256 password hashing."""
+"""Simple local authentication with SHA256 password hashing and session TTL."""
 import hashlib
 import json
 import os
 import uuid
+import time
 from typing import Optional
 
 AUTH_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "auth.json")
+SESSION_TTL = 3600  # 1 hour
 
 
 def _resolve_auth_path() -> str:
@@ -16,7 +18,7 @@ class SimpleAuth:
     """Simple password-based auth with in-memory session store."""
 
     def __init__(self):
-        self._sessions: dict[str, str] = {}
+        self._sessions: dict[str, tuple[str, float]] = {}  # token -> (username, expiry)
         self._auth_file = _resolve_auth_path()
 
     def is_setup(self) -> bool:
@@ -41,14 +43,28 @@ class SimpleAuth:
 
     def create_session(self, username: str) -> str:
         token = str(uuid.uuid4())
-        self._sessions[token] = username
+        self._sessions[token] = (username, time.time() + SESSION_TTL)
         return token
 
     def verify_session(self, token: str) -> bool:
-        return token in self._sessions
+        entry = self._sessions.get(token)
+        if entry is None:
+            return False
+        _, expiry = entry
+        if time.time() > expiry:
+            del self._sessions[token]
+            return False
+        return True
 
     def iter_session(self, token: str) -> Optional[str]:
-        return self._sessions.get(token)
+        entry = self._sessions.get(token)
+        if entry is None:
+            return None
+        username, expiry = entry
+        if time.time() > expiry:
+            del self._sessions[token]
+            return None
+        return username
 
     def reset_password(self, username: str, new_password: str) -> bool:
         with open(self._auth_file) as f:
