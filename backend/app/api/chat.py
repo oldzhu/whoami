@@ -1,12 +1,13 @@
 """Chat API endpoints."""
 import json
 import logging
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
 from ..core.router import ModelRouter
 from ..core.rag import RAGChain
 from ..core.conversation import SessionManager, ConversationMemory
+from ..middleware import auth_required
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +119,7 @@ async def chat_websocket(websocket: WebSocket):
 
 
 @router.get("/history/{session_id}")
-async def get_history(session_id: str):
+async def get_history(session_id: str, username: str = Depends(auth_required)):
     """Get message history for a session."""
     sessions = _get_sessions()
     session = sessions.get_session(session_id)

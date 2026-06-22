@@ -10,7 +10,7 @@ _updater = KnowledgeUpdater()
 
 
 @router.get("/pending")
-async def get_pending():
+async def get_pending(username: str = Depends(auth_required)):
     return {"facts": _queue.get_pending()}
 
 

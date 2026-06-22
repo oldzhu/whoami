@@ -74,7 +74,7 @@ async def upload_document(file: UploadFile = File(...), username: str = Depends(
     )
 
 @router.get("/documents")
-async def list_documents():
+async def list_documents(username: str = Depends(auth_required)):
     """List all documents in the knowledge base."""
     store = _get_store()
     count = store.count("knowledge_base")
@@ -95,7 +95,7 @@ async def search_knowledge(q: str = Query(...), top_k: int = 5):
     return {"query": q, "results": results}
 
 @router.get("/stats")
-async def get_stats():
+async def get_stats(username: str = Depends(auth_required)):
     """Get knowledge base statistics."""
     store = _get_store()
     return {
